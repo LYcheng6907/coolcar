@@ -1,0 +1,79 @@
+syntax = "proto3";
+package rental.v1;
+option go_package="coolcar/rental/api/gen/v1;rentalpb";
+
+
+// value object
+message Location{
+    double latitude = 1;// 纬度
+    double longitude = 2;// 经度
+}
+
+// value object
+message LocationStatus{
+    Location location = 1;
+    int32 fee_cent = 2;
+    double km_driven = 3;
+    string poi_name = 4; // 地点的名字
+}
+
+enum TripStatus{
+    TS_NOT_SPECIFIED = 0;
+    IN_PROGRESS = 1;
+    FINISHED = 2;
+}
+
+// entity
+// trip_a = {id: "trip1", start:{..}}
+// trip_b = {id: "trip1", start:{..},end:{..},status:"FINISHED"}
+// trip_a 和 trip_b 是同一个trip （id相等），id不同，值相同但却不等
+message TripEntity{
+    string id = 1;
+    Trip trip = 2;
+}
+
+// 业务逻辑和技术都要讲通，易于维护
+// value object
+message Trip{
+    string account_id = 1;
+    string car_id = 2;
+    LocationStatus start = 3;
+    LocationStatus current = 4; // 中间结点用于服务器计算实时的里程和价格
+    LocationStatus end = 5;
+    TripStatus status =6;
+}
+
+message CreateTripRequest{
+   Location start = 1;
+   string car_id = 2;
+}
+
+message GetTripRequest{
+    string id = 1;
+}
+
+message GetTripsRequest{
+    TripStatus status = 1; // 是否有正在进行的行程
+}
+
+message GetTripsResponse{
+    repeated TripEntity trips = 1;// 返回多个id和trip状态
+}
+// message CreateTripResponse{
+//     TripEntity trip = 1;   
+// }
+
+message UpdateTripRequest{
+    string id = 1;
+    Location current = 2; //只有当前的可以修改，不可以简单写trip，比如其中account_id，fee_cent等都不能改
+    bool end_trip = 3; // 是否结束行程
+}
+service TripService{
+    rpc CreateTrip (CreateTripRequest) returns (TripEntity);
+    // 读
+    rpc GetTrip (GetTripRequest) returns (Trip); // 根据id返回trip的状态
+    rpc GetTrips (GetTripsRequest) returns (GetTripsResponse); // 批量拿
+
+    // 更新
+    rpc UpdateTrip (UpdateTripRequest) returns (Trip);
+}

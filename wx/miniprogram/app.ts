@@ -1,6 +1,5 @@
-import { coolcar } from "./service/proto_gen/trip_pb"
-import camelcaseKeys = require("camelcase-keys")
 import { getSetting, getUserInfo } from "./utils/wxapi"
+import { Coolcar } from "./service/request"
 let resolveUserInfo:(value: WechatMiniprogram.UserInfo | PromiseLike<WechatMiniprogram.UserInfo>) => void
 let rejectUserInfo:(reason?: any) => void
 // app.ts
@@ -18,26 +17,8 @@ App<IAppOption>({
     // logs.unshift(Date.now())
     // wx.setStorageSync('logs', logs)
     
-    // 前后端联调案例
-    wx.request({
-      url:'http://localhost:8080/trip/123',
-      method: 'GET',
-      success:res => {
-        const getTripRes = coolcar.GetTripResponse.fromObject(camelcaseKeys(res.data as object,{
-          deep:true,
-        }))
-        console.log(getTripRes)
-        console.log("status is",coolcar.TripStatus[getTripRes.trip?.status!])
-      },
-      fail: console.log,
-    })
     // 登录
-    wx.login({
-      success: res => {
-        console.log(res.code)
-        // 发送 res.code 到后台换取 openId, sessionKey, unionId
-      },
-    })
+    Coolcar.login()
 
     try {
       const setting = await getSetting()
